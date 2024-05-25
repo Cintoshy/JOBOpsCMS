@@ -35,8 +35,8 @@
                             <label for="exampleInputFile">File input</label>
                             <div class="input-group">
                             <div class="custom-file">
-                                <input type="file" class="custom-file-input" id="file_path" name="file_path">
-                                <label class="custom-file-label" for="file_path">Choose file</label>
+                                <input type="file" class="custom-file-input" id="file_upload" name="file_upload">
+                                <label class="custom-file-label" for="file_upload">Choose file</label>
                             </div>
                             <div class="input-group-append">
                                 <span class="input-group-text">Upload</span>
@@ -48,19 +48,21 @@
                             <input type="number" class="form-control" id="serial_number" name="serial_number" value="{{ old('serial_number') }}">
                         </div>
                         <div id="app">
-                            <label for="unit">Select Job Type:</label>
-                            <select v-model="selectedUnit" @change="fetchJobTypeDetails">
-                                <option value="" disabled>Select Job Type</option>
-                                <option value="ICTRAM">ICTRAM</option>
-                                <option value="NICMUS">NICMUS</option>
-                                <option value="MIS">MIS</option>
-                            </select>
+                            <div class="mb-2">
+                                <label for="unit">Select Unit:</label>
+                                <select name="unit" class="form-select w-100 p-2 mb-2" v-model="selectedUnit" @change="fetchJobTypeDetails" required>
+                                    <option value="" disabled>Select Unit</option>
+                                    <option value="ICTRAM">ICTRAM</option>
+                                    <option value="NICMUS">NICMUS</option>
+                                    <option value="MIS">MIS</option>
+                                </select>
+                            </div>
 
                             <!-- ICTRAM Details -->
-                            <div v-if="equipmentDetailsICTRAM.length > 0">
+                            <div class=" w-50 mb-2" v-if="equipmentDetailsICTRAM.length > 0">
                                 <div>
                                 <label for="job_type">Select Job Type Details:</label>
-                                <select v-model="selectedJobTypeICTRAM" @change="fetchEquipmentDetailsICTRAM(selectedJobTypeICTRAM)">
+                                <select class="form-select w-100 p-2 mb-2" name="ictram_job_type_id" v-model="selectedJobTypeICTRAM" @change="fetchEquipmentDetailsICTRAM(selectedJobTypeICTRAM)" required>
                                     <option value="" disabled>Select Job Type</option>
                                     <option v-for="detail in uniqueJobTypeDetailsICTRAM" :key="detail.job_type.id" :value="detail.job_type.id">
                                         ID: @{{ detail.job_type.id }} - @{{ detail.job_type.jobType_name }}
@@ -69,7 +71,7 @@
                                 </div>
                                 <div>
                                 <label for="equipment">Select Equipment Details:</label>
-                                <select v-model="selectedEquipmentICTRAM" @change="fetchProblemDetailsICTRAM(selectedEquipmentICTRAM)">
+                                <select class="form-select w-100 p-2 mb-2" name="ictram_equipment_id" v-model="selectedEquipmentICTRAM" @change="fetchProblemDetailsICTRAM(selectedEquipmentICTRAM)" required>
                                     <option value="" disabled>Select Equipment</option>
                                     <option v-for="detail in uniqueEquipmentDetailsICTRAM" :key="detail.equipment.id" :value="detail.equipment.id">
                                         ID: @{{ detail.equipment.id }} - @{{ detail.equipment.equipment_name }}
@@ -78,7 +80,7 @@
                                 </div>
                                 <div>
                                 <label for="problem">Select Problem Details:</label>
-                                <select v-model="selectedProblemICTRAM">
+                                <select class="form-select w-100 p-2 mb-2" name="ictram_problem_id" v-model="selectedProblemICTRAM" required>
                                     <option value="" disabled>Select Problem</option>
                                     <option v-for="detail in uniqueProblemDetailsICTRAM" :key="detail.problem.id" :value="detail.problem.id">
                                     ID: @{{ detail.problem.id }} - @{{ detail.problem.problem_description }}
@@ -88,10 +90,10 @@
                             </div>
 
                             <!-- NICMUS Details -->
-                            <div v-if="equipmentDetailsNICMU.length > 0">
+                            <div class="w-50 mb-2" v-if="equipmentDetailsNICMU.length > 0">
                                 <div>
                                 <label for="job_type">Select Job Type Details:</label>
-                                <select v-model="selectedJobTypeNICMU" @change="fetchEquipmentDetails(selectedJobTypeNICMU)">
+                                <select class="form-select w-100 p-2 mb-2" name="nicmu_job_type_id" v-model="selectedJobTypeNICMU" @change="fetchEquipmentDetails(selectedJobTypeNICMU)" required>
                                     <option value="" disabled>Select Job Type</option>
                                     <option v-for="detail in uniqueJobTypeDetailsNICMU" :key="detail.job_type.id" :value="detail.job_type.id">
                                         ID: @{{ detail.job_type.id }} - @{{ detail.job_type.jobType_name }}
@@ -100,7 +102,7 @@
                                 </div>
                                 <div>
                                 <label for="equipment">Select Equipment Details:</label>
-                                <select v-model="selectedEquipmentNICMU" @change="fetchProblemDetails(selectedEquipmentNICMU)">
+                                <select class="form-select w-100 p-2 mb-2" v-model="selectedEquipmentNICMU" name="nicmu_equipment_id" @change="fetchProblemDetails(selectedEquipmentNICMU)" required>
                                     <option value="" disabled>Select Equipment</option>
                                     <option v-for="detail in uniqueEquipmentDetailsNICMU" :key="detail.equipment.id" :value="detail.equipment.id">
                                     ID: @{{ detail.equipment.id }} - @{{ detail.equipment.equipment_name }}
@@ -109,7 +111,7 @@
                                 </div>
                                 <div>
                                 <label for="problem">Select Problem Details:</label>
-                                <select v-model="selectedProblemNICMU">
+                                <select class="form-select w-100 p-2 mb-2" v-model="selectedProblemNICMU" name="nicmu_problem_id" required>
                                     <option value="" disabled>Select Problem</option>
                                     <option v-for="detail in uniqueProblemDetailsNICMU" :key="detail.problem.id" :value="detail.problem.id">
                                     ID: @{{ detail.problem.id }} - @{{ detail.problem.problem_description }}
@@ -119,25 +121,25 @@
                             </div>
 
                             <!-- MIS Details -->
-                            <div v-if="equipmentDetailsMIS.length > 0">
+                            <div class="w-50 mb-2" v-if="equipmentDetailsMIS.length > 0">
                                 <label for="request_type_name">Request Type Name:</label>
-                                <select v-model="selectedRequestType" @change="fetchRequestTypeDetailsMIS(selectedRequestType)">
+                                <select class="form-select w-100 p-2 mb-2" v-model="selectedRequestType" name="mis_request_type_id" @change="fetchRequestTypeDetailsMIS(selectedRequestType)" required>
                                     <option value="" disabled>Select Request Type</option>
                                     <option v-for="detail in uniqueRequestTypeMIS" :key="detail.request_type_name.id" :value="detail.request_type_name.id">
                                     ID: @{{ detail.request_type_name.id }} - @{{ detail.request_type_name.requestType_name }}
                                     </option>
                                 </select>
                                 <label for="job_type">Select Job Type:</label>
-                                <select v-model="selectedJobTypeMIS" @change="fetchAccountNameMIS(selectedJobTypeMIS)">
+                                <select class="form-select w-100 p-2 mb-2" v-model="selectedJobTypeMIS" name="mis_job_type_id" @change="fetchAccountNameMIS(selectedJobTypeMIS)" required>
                                     <option value="" disabled>Select Job Type</option>
                                     <option v-for="detail in uniqueJobTypeDetailsMIS" :key="detail.job_type.id" :value="detail.job_type.id">
                                     ID: @{{ detail.job_type.id }} - @{{ detail.job_type.jobType_name }}
                                     </option>
                                 </select>
                                 <label for="account_name">Select Account Name:</label>
-                                <select v-model="selectedAccountname">
+                                <select class="form-select w-100 p-2 mb-2" v-model="selectedAccountname" name="mis_asname_id">
                                     <option value="" disabled>Select Account Name</option>
-                                    <option v-for="detail in accountNameMISes" :key="detail.as_name.id" :value="detail.as_name.id">
+                                    <option v-for="detail in accountNameMISes" :key="detail.as_name.id" :value="detail.as_name.id" required>
                                     ID: @{{ detail.as_name.id }} - @{{ detail.as_name.name }}
                                     </option>
                                 </select>
@@ -148,6 +150,8 @@
                             <input type="checkbox" class="form-check-input" id="covered_under_warranty" name="covered_under_warranty" value="1">
                             <label class="form-check-label" for="covered_under_warranty">Covered Under Warranty?</label>
                         </div>
+
+                        <button type="submit" class="btn btn-primary">Submit</button>
                     </div>
                 </div>
               </form>

@@ -15,6 +15,7 @@ use App\Models\Ticket;
 use App\Models\Unit;
 use Carbon\Carbon;
 use App\Models\IctramJobType;
+use Illuminate\Support\Facades\Auth;
 
 
 class TicketController extends Controller
@@ -314,66 +315,60 @@ public function getAllDetails(Request $request)
     //         return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
     //     }
     // }
-    
+
     public function store(Request $request)
     {
         // Validate the request data
         $request->validate([
+            'building_number' => 'nullable',
+            'office_name' => 'nullable',
+            'description' => 'nullable',
+            'serial_number' => 'nullable',
             'file_upload' => 'nullable|file|max:2048',
-            'assigned_to' => 'required|array',
-            'assigned_to.*' => 'exists:users,id'
+            'ictram_job_type_id' => 'nullable',
+            'ictram_equipment_id' => 'nullable',
+            'ictram_problem_id' => 'nullable',
+            'nicmu_job_type_id' => 'nullable',
+            'nicmu_equipment_id' => 'nullable',
+            'nicmu_problem_id' => 'nullable',
+            'mis_request_type_id' => 'nullable',
+            'mis_job_type_id' => 'nullable',
+            'mis_asname_id' => 'nullable',
         ]);
+        $userId = Auth::id();
 
-        // Extract ticket data excluding file upload and assigned_to
-        $ticketData = $request->except(['file_upload', 'assigned_to']);
-        
-        // Create the ticket
-        $ticket = Ticket::create($ticketData);
-        
-        // Handle file upload
         if ($request->hasFile('file_upload')) {
             $file = $request->file('file_upload');
             $filename = time() . '_' . $file->getClientOriginalName();
             $filePath = $file->storeAs('uploads', $filename, 'public');
-            $ticket->file_path = $filePath;
-            $ticket->save();
         }
-        
-        // Authentication user is the requestor
-        $authUser = auth()->user(); 
-
-        $assignedUsers = User::findMany($ticket->assigned_to); // Assuming 'assigned_to' is an array of user IDs
-        $assignedNames = $assignedUsers->pluck('name')->join(', ');
-
-        // Notify the requestor and admins
-        $admins = User::where('role', 1)->get();
-        foreach ($admins as $admin) {
-            $isSelf = $admin->id === $authUser->id;
-            $admin->notify(new TicketCreatedNotification($admin, $ticket, $authUser, $isSelf, $assignedNames));
-        }
-
-        // Attach and notify assigned users
-        $ticket->users()->syncWithoutDetaching($request->assigned_to);
-        foreach ($request->assigned_to as $userId) {
-            $user = User::find($userId);
-            $isSelf = $user->id === $authUser->id;
-            if ($user && $user->id !== $authUser->id) {
-                $user->notify(new TicketAssignedNotification($ticket, $user, $authUser));
-            }
-        }
-
-
+        // Create a new ticket instance
         $ticket = new Ticket();
+        $ticket->building_number = $request->building_number;
+        $ticket->office_name = $request->office_name;
+        $ticket->description = $request->description;
         $ticket->serial_number = $request->serial_number;
-        $ticket->covered_under_warranty = $request->has('covered_under_warranty');
-        // Set other fields as necessary
+
+        $ticket->ictram_job_type_id = $request->ictram_job_type_id;
+        $ticket->ictram_equipment_id = $request->ictram_equipment_id;
+        $ticket->ictram_problem_id = $request->ictram_problem_id;
+
+        $ticket->nicmu_job_type_id = $request->nicmu_job_type_id;
+        $ticket->nicmu_equipment_id = $request->nicmu_equipment_id;
+        $ticket->nicmu_problem_id = $request->nicmu_problem_id;
+
+        $ticket->mis_request_type_id = $request->mis_request_type_id;
+        $ticket->mis_job_type_id = $request->mis_job_type_id;
+        $ticket->mis_asname_id = $request->mis_asname_id;
+
+        $ticket->user_id = $userId;
+        $ticket->file_path = $filePath;
+
+        // Save the ticket
         $ticket->save();
-        
-        // Log activity
-        ActivityLogger::log('Created', $ticket, 'Ticket created');
-        
+
         // Redirect with success message
-        return redirect()->route('tickets')->with('success', 'Ticket Successfully Created!');
+        return redirect()->back()->with('success', 'Ticket Successfully Created!');
     }
 
 
@@ -471,3 +466,78 @@ public function getAllDetails(Request $request)
     
 
 }
+
+
+/********    Your previous function here     ********/
+
+    // public function store(Request $request)
+    // {
+
+    //     return dd($request);
+    //     // Validate the request data
+    //     $request->validate([
+    //         'file_upload' => 'nullable|file|max:2048',
+    //         'assigned_to' => 'required|array',
+    //         'assigned_to.*' => 'exists:users,id',
+    //         'ictram_jobType_id' => 'nullable',
+    //         'ictram_equipment_id' => 'nullable',
+    //         'ictram_problem_id' => 'nullable',
+    //         'nictram_jobType_id' => 'nullable',
+    //         'nictram_equipment_id' => 'nullable',
+    //         'nictram_problem_id' => 'nullable',
+    //         'mis_requestType_id' => 'nullable',
+    //         'mis_jobType_id' => 'nullable',
+    //         'mis_accountName_id' => 'nullable',
+    //     ]);
+
+    //     // Extract ticket data excluding file upload and assigned_to
+    //     $ticketData = $request->except(['file_upload', 'assigned_to']);
+        
+    //     // Create the ticket
+    //     $ticket = Ticket::create($ticketData);
+        
+    //     // Handle file upload
+    //     if ($request->hasFile('file_upload')) {
+    //         $file = $request->file('file_upload');
+    //         $filename = time() . '_' . $file->getClientOriginalName();
+    //         $filePath = $file->storeAs('uploads', $filename, 'public');
+    //         $ticket->file_path = $filePath;
+    //         $ticket->save();
+    //     }
+        
+    //     // Authentication user is the requestor
+    //     $authUser = auth()->user(); 
+
+    //     $assignedUsers = User::findMany($ticket->assigned_to); // Assuming 'assigned_to' is an array of user IDs
+    //     $assignedNames = $assignedUsers->pluck('name')->join(', ');
+
+    //     // Notify the requestor and admins
+    //     $admins = User::where('role', 1)->get();
+    //     foreach ($admins as $admin) {
+    //         $isSelf = $admin->id === $authUser->id;
+    //         $admin->notify(new TicketCreatedNotification($admin, $ticket, $authUser, $isSelf, $assignedNames));
+    //     }
+
+    //     // Attach and notify assigned users
+    //     $ticket->users()->syncWithoutDetaching($request->assigned_to);
+    //     foreach ($request->assigned_to as $userId) {
+    //         $user = User::find($userId);
+    //         $isSelf = $user->id === $authUser->id;
+    //         if ($user && $user->id !== $authUser->id) {
+    //             $user->notify(new TicketAssignedNotification($ticket, $user, $authUser));
+    //         }
+    //     }
+
+
+    //     $ticket = new Ticket();
+    //     $ticket->serial_number = $request->serial_number;
+    //     $ticket->covered_under_warranty = $request->has('covered_under_warranty');
+    //     // Set other fields as necessary
+    //     $ticket->save();
+        
+    //     // Log activity
+    //     ActivityLogger::log('Created', $ticket, 'Ticket created');
+        
+    //     // Redirect with success message
+    //     return redirect()->route('tickets')->with('success', 'Ticket Successfully Created!');
+    // }

@@ -11,7 +11,7 @@ class Ticket extends Model
 
     public $primaryKey = 'id';
 
-    public $fillable = ['service_location','unit_id', 'request', 'priority_level', 
+    public $fillable = ['service_location', 'request', 'priority_level', 
                         'description', 'user_id', 'is_approved', 'deadline', 'file_path',
                          'status', 'ictram_job_type_id', 'ictram_equipment_id', 'ictram_problem_id',
                         'nicmu_job_type_id', 'nicmu_equipment_id', 'nicmu_problem_id',
