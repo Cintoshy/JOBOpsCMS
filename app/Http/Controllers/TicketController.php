@@ -5,60 +5,67 @@ use Illuminate\Support\Facades\Notification;
 use App\Notifications\TicketCreatedNotification;
 use App\Notifications\TicketAssignedNotification;
 use App\Models\ProblemTypeOrEquipment;
+use App\Models\Ictram;
+use App\Models\Nicmu;
+use App\Models\Mis;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Ticket;
 use App\Models\Unit;
 use Carbon\Carbon;
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-use Storage;
+use App\Models\IctramJobType;
+use Illuminate\Support\Facades\Auth;
 
 
 class TicketController extends Controller
 {
 
-    public function index(Request $request)
-    {
-        $tickets = Ticket::with(['user', 'users'])->orderBy('created_at', 'desc')->get();
-        $userIds = User::where('role', 2)->where('is_approved', true)->get();  // Specific user with conditions
-
-        // Calculate age for each ticket
-        $tickets->each(function ($ticket) {
-            $ticket->age = Carbon::parse($ticket->created_at)->diffInDays(Carbon::now());
-        });
+        public function create()
+        {
+            // $ictrams = Ictram::with(['jobType', 'equipment', 'problem'])->get();
+            // $nicmus = Nicmu::with(['jobType', 'equipment', 'problem'])->get();
+            // $mises = Mis::all();
+            return view('ticket.create');
         
-        $query = Ticket::query();
-
-        if ($request->has('building_number')) {
-            $query->where('building_number', $request->building_number);
         }
 
-        if ($request->has('priority_level')) {
-            $query->where('priority_level', $request->priority_level);
-        }
+// public function getJobTypeDetails(Request $request)
+// {
+//     $jobType = $request->query('unit');
+    
+//     switch ($jobType) {
+//         case 'ICTRAM':
+//             $object = Ictram::with(['jobType', 'equipment', 'problem'])->get();
+//             $details = ['ictram' => $object];
+//             break;
+//         case 'NICMUS':
+//             $object = Nicmu::with(['jobType', 'equipment', 'problem'])->get();
+//             $details = ['nicmu' => $object];
+//             break;
+//         case 'MIS':
+//             $object = Mis::with(['requestTypeName', 'jobType', 'asName'])->get();
+//             $details = ['mis' => $object];
+//             break;
+//         default:
+//             $details = [];
+//             break;
+//         if ($request->has('priority_level')) {
+//             $query->where('priority_level', $request->priority_level);
+//         }
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+//         if ($request->has('status')) {
+//             $query->where('status', $request->status);
+//         }
 
-        $sortBy = $request->input('sort_by', 'id');
-        $sortDirection = $request->input('sort_order', 'asc');
+//         $sortBy = $request->input('sort_by', 'id');
+//         $sortDirection = $request->input('sort_order', 'asc');
 
-        $tickets = $query->orderBy($sortBy, $sortDirection)->get();
+//         $tickets = $query->orderBy($sortBy, $sortDirection)->get();
 
-        return view('ticket.index', compact('tickets','userIds'));
-    }
-
-
+//         return view('ticket.index', compact('tickets','userIds'));
+//     }
+// }
     public function exportExcel(Request $request)
     {
         $tickets = $this->filteredTickets($request);
@@ -167,72 +174,84 @@ class TicketController extends Controller
 
         // Return the file as a response to the user
         return response()->download($filePath)->deleteFileAfterSend(true);
-    }
+}
+
+// public function getAllDetails(Request $request)
+// {
+//     $jobType = $request->query('unit');
     
-    public function exportPdf(Request $request)
-    {
-        // Get the filtered tickets
-        $tickets = $this->filteredTickets($request);
+//     switch ($jobType) {
+//         case 'ICTRAM':
+//             $object = IctramJobType::with(['jobType', 'equipment', 'problem'])->get();
+//             $details = ['ictram' => $object];
+//             break;
+//         case 'NICMUS':
+//             $object = Nicmu::with(['jobType', 'equipment', 'problem'])->get();
+//             $details = ['nicmu' => $object];
+//             break;
+//         case 'MIS':
+//             $object = Mis::with(['requestTypeName', 'jobType', 'asName'])->get();
+//             $details = ['mis' => $object];
+//             break;
+//         default:
+//             $details = [];
+//             break;
+//     }
 
-        // Generate the HTML content for the PDF
-        $html = view('reports.report-pdf', compact('tickets'))->render();
+//     return response()->json($details);
+// }
 
-        // Configure Dompdf options
-        $options = new Options();
-        $options->set('defaultFont', 'Arial');
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true); // Enable remote file access (for images, etc.)
 
-        // Initialize Dompdf with the options
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape');
-        $dompdf->render();
-
-        // Stream the generated PDF
-        return $dompdf->stream('tickets.pdf', [
-            'Attachment' => false // Set to true to force download
-        ]);
+public function getJobTypeDetails(Request $request)
+{
+    $jobType = $request->query('unit');
+    
+    switch ($jobType) {
+        case 'ICTRAM':
+            $object = Ictram::with(['jobType', 'equipment', 'problem'])->get();
+            $details = ['ictram' => $object];
+            break;
+        case 'NICMUS':
+            $object = Nicmu::with(['jobType', 'equipment', 'problem'])->get();
+            $details = ['nicmu' => $object];
+            break;
+        case 'MIS':
+            $object = Mis::with(['requestTypeName', 'jobType', 'asName'])->get();
+            $details = ['mis' => $object];
+            break;
+        default:
+            $details = [];
+            break;
     }
 
-    private function filteredTickets(Request $request)
-    {
-        $query = Ticket::query();
+    return response()->json($details);
+}
 
-        if ($request->has('building_number')) {
-            $query->where('building_number', $request->building_number);
-        }
-
-        if ($request->has('priority_level')) {
-            $query->where('priority_level', $request->priority_level);
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $sortBy = $request->input('sort_by', 'id');
-        $sortDirection = $request->input('sort_order', 'asc');
-
-        return $query->orderBy($sortBy, $sortDirection)->get();
+public function getAllDetails(Request $request)
+{
+    $jobType = $request->query('unit');
+    
+    switch ($jobType) {
+        case 'ICTRAM':
+            $object = IctramJobType::with(['jobType', 'equipment', 'problem'])->get();
+            $details = ['ictram' => $object];
+            break;
+        case 'NICMUS':
+            $object = Nicmu::with(['jobType', 'equipment', 'problem'])->get();
+            $details = ['nicmu' => $object];
+            break;
+        case 'MIS':
+            $object = Mis::with(['requestTypeName', 'jobType', 'asName'])->get();
+            $details = ['mis' => $object];
+            break;
+        default:
+            $details = [];
+            break;
     }
 
+    return response()->json($details);
+}
 
-
-
-
-
-
-
-
-
-
-    public function create()
-    {
-        
-        return view('ticket.create');
-     
-    }
 
     public function getJobTypesByUnit($unitId)
     {
@@ -296,66 +315,60 @@ class TicketController extends Controller
     //         return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
     //     }
     // }
-    
+
     public function store(Request $request)
     {
         // Validate the request data
         $request->validate([
+            'building_number' => 'nullable',
+            'office_name' => 'nullable',
+            'description' => 'nullable',
+            'serial_number' => 'nullable',
             'file_upload' => 'nullable|file|max:2048',
-            'assigned_to' => 'required|array',
-            'assigned_to.*' => 'exists:users,id'
+            'ictram_job_type_id' => 'nullable',
+            'ictram_equipment_id' => 'nullable',
+            'ictram_problem_id' => 'nullable',
+            'nicmu_job_type_id' => 'nullable',
+            'nicmu_equipment_id' => 'nullable',
+            'nicmu_problem_id' => 'nullable',
+            'mis_request_type_id' => 'nullable',
+            'mis_job_type_id' => 'nullable',
+            'mis_asname_id' => 'nullable',
         ]);
+        $userId = Auth::id();
 
-        // Extract ticket data excluding file upload and assigned_to
-        $ticketData = $request->except(['file_upload', 'assigned_to']);
-        
-        // Create the ticket
-        $ticket = Ticket::create($ticketData);
-        
-        // Handle file upload
         if ($request->hasFile('file_upload')) {
             $file = $request->file('file_upload');
             $filename = time() . '_' . $file->getClientOriginalName();
             $filePath = $file->storeAs('uploads', $filename, 'public');
-            $ticket->file_path = $filePath;
-            $ticket->save();
         }
-        
-        // Authentication user is the requestor
-        $authUser = auth()->user(); 
-
-        $assignedUsers = User::findMany($ticket->assigned_to); // Assuming 'assigned_to' is an array of user IDs
-        $assignedNames = $assignedUsers->pluck('name')->join(', ');
-
-        // Notify the requestor and admins
-        $admins = User::where('role', 1)->get();
-        foreach ($admins as $admin) {
-            $isSelf = $admin->id === $authUser->id;
-            $admin->notify(new TicketCreatedNotification($admin, $ticket, $authUser, $isSelf, $assignedNames));
-        }
-
-        // Attach and notify assigned users
-        $ticket->users()->syncWithoutDetaching($request->assigned_to);
-        foreach ($request->assigned_to as $userId) {
-            $user = User::find($userId);
-            $isSelf = $user->id === $authUser->id;
-            if ($user && $user->id !== $authUser->id) {
-                $user->notify(new TicketAssignedNotification($ticket, $user, $authUser));
-            }
-        }
-
-
+        // Create a new ticket instance
         $ticket = new Ticket();
+        $ticket->building_number = $request->building_number;
+        $ticket->office_name = $request->office_name;
+        $ticket->description = $request->description;
         $ticket->serial_number = $request->serial_number;
-        $ticket->covered_under_warranty = $request->has('covered_under_warranty');
-        // Set other fields as necessary
+
+        $ticket->ictram_job_type_id = $request->ictram_job_type_id;
+        $ticket->ictram_equipment_id = $request->ictram_equipment_id;
+        $ticket->ictram_problem_id = $request->ictram_problem_id;
+
+        $ticket->nicmu_job_type_id = $request->nicmu_job_type_id;
+        $ticket->nicmu_equipment_id = $request->nicmu_equipment_id;
+        $ticket->nicmu_problem_id = $request->nicmu_problem_id;
+
+        $ticket->mis_request_type_id = $request->mis_request_type_id;
+        $ticket->mis_job_type_id = $request->mis_job_type_id;
+        $ticket->mis_asname_id = $request->mis_asname_id;
+
+        $ticket->user_id = $userId;
+        $ticket->file_path = $filePath;
+
+        // Save the ticket
         $ticket->save();
-        
-        // Log activity
-        ActivityLogger::log('Created', $ticket, 'Ticket created');
-        
+
         // Redirect with success message
-        return redirect()->route('tickets')->with('success', 'Ticket Successfully Created!');
+        return redirect()->back()->with('success', 'Ticket Successfully Created!');
     }
 
 
@@ -453,3 +466,78 @@ class TicketController extends Controller
     
 
 }
+
+
+/********    Your previous function here     ********/
+
+    // public function store(Request $request)
+    // {
+
+    //     return dd($request);
+    //     // Validate the request data
+    //     $request->validate([
+    //         'file_upload' => 'nullable|file|max:2048',
+    //         'assigned_to' => 'required|array',
+    //         'assigned_to.*' => 'exists:users,id',
+    //         'ictram_jobType_id' => 'nullable',
+    //         'ictram_equipment_id' => 'nullable',
+    //         'ictram_problem_id' => 'nullable',
+    //         'nictram_jobType_id' => 'nullable',
+    //         'nictram_equipment_id' => 'nullable',
+    //         'nictram_problem_id' => 'nullable',
+    //         'mis_requestType_id' => 'nullable',
+    //         'mis_jobType_id' => 'nullable',
+    //         'mis_accountName_id' => 'nullable',
+    //     ]);
+
+    //     // Extract ticket data excluding file upload and assigned_to
+    //     $ticketData = $request->except(['file_upload', 'assigned_to']);
+        
+    //     // Create the ticket
+    //     $ticket = Ticket::create($ticketData);
+        
+    //     // Handle file upload
+    //     if ($request->hasFile('file_upload')) {
+    //         $file = $request->file('file_upload');
+    //         $filename = time() . '_' . $file->getClientOriginalName();
+    //         $filePath = $file->storeAs('uploads', $filename, 'public');
+    //         $ticket->file_path = $filePath;
+    //         $ticket->save();
+    //     }
+        
+    //     // Authentication user is the requestor
+    //     $authUser = auth()->user(); 
+
+    //     $assignedUsers = User::findMany($ticket->assigned_to); // Assuming 'assigned_to' is an array of user IDs
+    //     $assignedNames = $assignedUsers->pluck('name')->join(', ');
+
+    //     // Notify the requestor and admins
+    //     $admins = User::where('role', 1)->get();
+    //     foreach ($admins as $admin) {
+    //         $isSelf = $admin->id === $authUser->id;
+    //         $admin->notify(new TicketCreatedNotification($admin, $ticket, $authUser, $isSelf, $assignedNames));
+    //     }
+
+    //     // Attach and notify assigned users
+    //     $ticket->users()->syncWithoutDetaching($request->assigned_to);
+    //     foreach ($request->assigned_to as $userId) {
+    //         $user = User::find($userId);
+    //         $isSelf = $user->id === $authUser->id;
+    //         if ($user && $user->id !== $authUser->id) {
+    //             $user->notify(new TicketAssignedNotification($ticket, $user, $authUser));
+    //         }
+    //     }
+
+
+    //     $ticket = new Ticket();
+    //     $ticket->serial_number = $request->serial_number;
+    //     $ticket->covered_under_warranty = $request->has('covered_under_warranty');
+    //     // Set other fields as necessary
+    //     $ticket->save();
+        
+    //     // Log activity
+    //     ActivityLogger::log('Created', $ticket, 'Ticket created');
+        
+    //     // Redirect with success message
+    //     return redirect()->route('tickets')->with('success', 'Ticket Successfully Created!');
+    // }

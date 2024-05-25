@@ -105,6 +105,7 @@ Route::get('/mark-notification-as-read/{notification}', [NotificationController:
 
 Route::get('/tickets', [TicketController::class, 'index'])->name('tickets');
 Route::get('/create/ticket', [TicketController::class, 'create'])->name('create.ticket');
+Route::get('/get-job-type-details', [TicketController::class, 'getJobTypeDetails'])->name('create.ticketssss');
 Route::post('/store/ticket', [TicketController::class, 'store'])->name('store.ticket');
 Route::get('/show/ticket/{id}', [TicketController::class, 'show'])->name('ticket.show');
 Route::get('/edit-ticket/{id}', [TicketController::class, 'edit'])->name('edit.ticket');
